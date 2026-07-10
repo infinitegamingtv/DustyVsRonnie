@@ -283,6 +283,7 @@ input[uppercase] { text-transform: uppercase; }
     flex-direction: row;
     width: 100vw;
     height: 100%;
+    flex: 1; /* Ensures it fills .screen */
 }
 
 .col-left {
@@ -775,15 +776,7 @@ input[uppercase] { text-transform: uppercase; }
         padding: 1rem;
     }
 
-    /* Force the game stage to fit the 40vh area without rounding borders */
-    #game-scene .game-stage {
-        width: 100% !important;
-        height: 100% !important;
-        max-width: none !important;
-        aspect-ratio: auto !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-    }
+    /* game-stage is fluid now, no need for overrides */
     
     /* Adjust typography */
     h1 { font-size: 2.2rem; }
