@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ronnie vs. Dusty - Squad Battle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- ROLE SELECTION -->
+        <div id="screen-role" class="screen active">
+            <h1>Ronnie vs. Dusty</h1>
+            <p>Chọn vai trò của bạn</p>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="app.selectRole('host')">Giáo viên (Tạo phòng)</button>
+                <button class="btn btn-secondary" onclick="app.selectRole('student')">Học sinh (Tham gia)</button>
+            </div>
+        </div>
+
+        <!-- HOST LOBBY -->
+        <div id="screen-host-lobby" class="screen">
+            <h2>Phòng chờ của lớp</h2>
+            <div class="room-code-display">
+                Mã phòng: <span id="display-room-code">...</span>
+            </div>
+            <p>Học sinh truy cập và nhập mã phòng để tham gia!</p>
+            <div class="player-list-container">
+                <h3>Danh sách lớp (<span id="host-player-count">0</span>)</h3>
+                <ul id="host-player-list" class="player-list"></ul>
+            </div>
+            <button class="btn btn-start" onclick="app.startGame()" id="btn-start-game" disabled>Bắt đầu trận đấu!</button>
+        </div>
+
+        <!-- MÀN HÌNH CHỜ (Đang tải) -->
+        <div id="screen-waiting" class="screen">
+            <h2>Đang chuẩn bị phòng...</h2>
+            <div class="loader"></div>
+        </div>
+
+        <!-- MÀN HÌNH INTRO (Quái vật làm bẩn phòng) -->
+        <div id="screen-intro" class="screen" style="background: url('assets/bg_intro.jpeg') center/cover no-repeat; overflow: hidden;">
+            <img src="assets/Dusty-intro.png" id="dusty-intro-img" style="position: absolute; left: -300px; top: 30%; width: clamp(200px, 20vw, 400px); z-index: 20;" />
+        </div>
+
+        <!-- STUDENT LOGIN -->
+        <div id="screen-student-login" class="screen">
+            <h2>Tham gia phòng</h2>
+            <div class="form-group">
+                <input type="text" id="input-room-code" placeholder="Nhập mã phòng" autocomplete="off">
+            </div>
+            <div class="form-group">
+                <input type="text" id="input-player-name" placeholder="Tên của bạn (VD: Minh Anh)" autocomplete="off">
+            </div>
+            <button class="btn btn-primary" onclick="app.joinRoom()">Vào phòng</button>
+            <button class="btn btn-text" onclick="app.showScreen('screen-role')">Quay lại</button>
+            <div id="login-error" class="error-text"></div>
+        </div>
+
+        <!-- STUDENT LOBBY -->
+        <div id="screen-student-lobby" class="screen">
+            <h2>Đang chờ giáo viên...</h2>
+            <p>Chào mừng, <span id="welcome-player-name"></span>!</p>
+            <div class="player-list-container">
+                <h3>Bạn bè trong phòng:</h3>
+                <ul id="student-player-list" class="player-list"></ul>
+            </div>
+        </div>
+
+        <!-- INTRO CUTSCENE -->
+        <div id="screen-intro" class="screen">
+            <div class="intro-scene">
+                <!-- SVG Mây bụi bay vào thổi làm bẩn phòng -->
+                <div class="dusty-intro"></div>
+                <h2 class="intro-text">Dusty đang làm bẩn căn phòng!</h2>
+            </div>
+        </div>
+
+        <!-- GAME SCREEN -->
+        <div id="screen-game" class="screen">
+            <div class="game-layout">
+                <!-- CỘT TRÁI: CẢNH VẬT & BOSS -->
+                <div class="col-left" id="game-scene" style="display: flex; justify-content: center; align-items: center; background: #222;">
+                    <div class="game-stage" style="position: relative; width: 95%; max-width: 1000px; aspect-ratio: 4/3; border-radius: 15px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+                        <img src="assets/bg-dirty.jpeg" id="fallback-bg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;" />
+                        
+                        <div class="boss-container">
+                            <div class="hp-bar-bg">
+                                <div class="hp-bar-fill" id="boss-hp-fill"></div>
+                                <span class="hp-text" id="boss-hp-text"></span>
+                            </div>
+                            <div class="dusty-boss" id="dusty-character">
+                                <img src="assets/dusty-angry.png" alt="Dusty Boss" id="dusty-img" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;" />
+                            </div>
+                        </div>
+
+                        <div class="ronnie-character" id="ronnie-character">
+                            <img src="assets/ronnie-idle.png" alt="Ronnie" id="ronnie-img" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;" />
+                        </div>
+                        
+                        <!-- Máy hút bụi (Ultimate) -->
+                        <div id="vacuum-container" class="vacuum-character" style="display: none; position: absolute; right: -60%; bottom: 10%; width: 50%; z-index: 2000;">
+                            <img src="assets/vacuum.png" style="width: 100%; height: auto; transform: scaleX(-1); object-fit: contain;" />
+                        </div>
+                        
+                        <div id="damage-indicators"></div>
+
+                        <div class="leaderboard-panel">
+                            <div class="leaderboard-header">
+                                <h3>Xếp hạng</h3>
+                            </div>
+                            <ul class="player-list" id="game-leaderboard"></ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CỘT PHẢI: CÂU HỎI -->
+                <div class="col-right" id="question-panel">
+                    <div id="host-view-panel" style="display: none; height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; text-align: center;">
+                        <h2 style="color: #333; font-size: 2.5rem; text-shadow: 2px 2px 0 #fff;">Bảng Điều Khiển</h2>
+                        <p style="color: #666; font-size: 1.2rem; margin-bottom: 2rem;">Học sinh đang chiến đấu...</p>
+                        
+                        <div style="background: rgba(255,255,255,0.8); border-radius: 10px; padding: 10px; margin-bottom: 2rem; border: 2px solid #ccc;">
+                            <h3 style="margin:0; color:#2c3e50;" id="host-completion-status">Đã hoàn thành: 0/0 học sinh</h3>
+                        </div>
+
+                        <div style="display: flex; gap: 15px; flex-direction: column; width: 80%;">
+                            <button class="btn btn-secondary" onclick="app.endGameEarly()" style="background: linear-gradient(to bottom, #e74c3c, #c0392b); box-shadow: 0 6px 0 #922b21, 0 8px 15px rgba(0,0,0,0.2); color: white; border: 2px solid #fff;">KẾT THÚC TRẬN (Hiện Bảng Vàng)</button>
+                            <button class="btn btn-primary" onclick="app.resetGame()" style="background: linear-gradient(to bottom, #f39c12, #d35400); box-shadow: 0 6px 0 #a04000, 0 8px 15px rgba(0,0,0,0.2); border: 2px solid #fff;">CHƠI LẠI (Về Sảnh)</button>
+                        </div>
+                    </div>
+                    <div id="student-view-panel" style="display: flex; flex-direction: column; height: 100%; position: relative;">
+                        
+                        <!-- Lớp màng bụi bẩn che màn hình -->
+                        <div id="dust-overlay" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(80, 70, 60, 0.95); z-index: 50; flex-direction: column; justify-content: center; align-items: center; border-radius: 10px; cursor: pointer;">
+                            <h2 style="color: #fff; text-shadow: 2px 2px 5px #000; text-align: center; margin-bottom: 20px; font-size: 2rem;">BỤI MÙ MỊT!</h2>
+                            <p style="color: #FFD700; font-size: 1.2rem; text-align: center; max-width: 80%;">Dusty đang tấn công! Nhấp/Chạm liên tục để lau sạch màn hình!</p>
+                            <div style="font-size: 4rem; animation: shake 0.5s infinite;">🧹</div>
+                        </div>
+
+                        <div class="question-header" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>Câu hỏi <span id="question-number">1</span>/<span id="total-questions">10</span></span>
+                            <div style="display: flex; align-items: center; gap: 15px;">
+                                <span id="time-attack-timer" style="display: none; color: #e74c3c; font-size: 1.5rem; font-weight: bold; animation: pulse 1s infinite;">⏱️ <span id="timer-sec">10</span>s</span>
+                                <span id="combo-display" style="display: none; color: #ffeb3b; font-size: 1.5rem; text-shadow: 2px 2px 0 #d35400, 0 0 10px #ff9800; font-weight: bold; transform: scale(1); transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);">Combo x2 🔥</span>
+                            </div>
+                        </div>
+                        <div class="question-text" id="question-text">
+                            Đang tải câu hỏi...
+                        </div>
+                        <div style="text-align: center; width: 100%;">
+                            <img id="question-image" src="" alt="Question Image" style="display: none; max-width: 100%; max-height: 250px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); margin-bottom: 15px; border: 3px solid #ccc; object-fit: contain;" />
+                        </div>
+                        <div class="options-grid" id="options-grid">
+                            <button class="btn-option" onclick="app.selectOption(0)">A. ...</button>
+                            <button class="btn-option" onclick="app.selectOption(1)">B. ...</button>
+                            <button class="btn-option" onclick="app.selectOption(2)">C. ...</button>
+                            <button class="btn-option" onclick="app.selectOption(3)">D. ...</button>
+                        </div>
+                        <div id="feedback-message" class="feedback-msg"></div>
+                        
+                        <div style="text-align: center; margin-top: 15px;">
+                            <button id="btn-ultimate" class="btn btn-primary" onclick="app.useUltimate()" style="display: none; width: 100%; max-width: 400px; padding: 15px; font-size: 1.8rem; background: linear-gradient(135deg, #9b59b6, #8e44ad); box-shadow: 0 0 20px #9b59b6, 0 6px 0 #6c3483; animation: glow 1.5s infinite alternate; border: 2px solid #fff;">🌪️ DÙNG TUYỆT CHIÊU! 🌪️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MÀN HÌNH KẾT THÚC (Leaderboard Podium) -->
+        <div id="screen-end" class="screen" style="background: rgba(0,0,0,0.6) !important; z-index: 1000; align-items: center; justify-content: center; overflow: hidden; display: none;">
+            <div style="width: 80%; max-width: 800px; text-align: center; position: absolute; z-index: 1001;">
+                <h1 style="color: #fff; text-shadow: 0 4px 10px rgba(0,0,0,0.8); font-size: 3rem; margin-bottom: 0;">CHIẾN THẮNG!</h1>
+                <p style="color: #FFD700; font-size: 1.5rem; margin-bottom: 2rem;">BẢNG VÀNG DANH DỰ</p>
+                <div style="width: 100%; position: relative;">
+                    <svg viewBox="0 0 800 500" width="100%" height="100%" style="overflow: visible;">
+                        <defs>
+                            <linearGradient id="gold-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFDF00"/><stop offset="100%" stop-color="#D4AF37"/></linearGradient>
+                            <linearGradient id="silver-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#E6E8FA"/><stop offset="100%" stop-color="#A9A9A9"/></linearGradient>
+                            <linearGradient id="bronze-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#CD7F32"/><stop offset="100%" stop-color="#8B4513"/></linearGradient>
+                            <filter id="glow"><feGaussianBlur stdDeviation="5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                        </defs>
+                        <!-- Thêm ngôi sao -->
+                        <path d="M 225 150 L 230 165 L 245 165 L 232 175 L 237 190 L 225 180 L 213 190 L 218 175 L 205 165 L 220 165 Z" fill="#FFD700" filter="url(#glow)"/>
+                        <path d="M 575 220 L 580 235 L 595 235 L 582 245 L 587 260 L 575 250 L 563 260 L 568 245 L 555 235 L 570 235 Z" fill="#E6E8FA" filter="url(#glow)"/>
+                        
+                        <!-- Bậc 2 (Bạc) -->
+                        <rect x="150" y="250" width="150" height="250" fill="url(#silver-grad)" rx="15" stroke="#FFFFFF" stroke-width="4"/>
+                        <text x="225" y="310" font-size="50" font-weight="900" fill="#fff" text-anchor="middle" filter="url(#glow)">2</text>
+                        <text id="podium-name-2" x="225" y="220" font-size="28" font-weight="bold" fill="#fff" text-anchor="middle" text-shadow="2px 2px 5px #000">---</text>
+                        <text id="podium-score-2" x="225" y="245" font-size="20" font-weight="bold" fill="#FFD700" text-anchor="middle" text-shadow="1px 1px 3px #000">0đ</text>
+                        
+                        <!-- Bậc 1 (Vàng) -->
+                        <rect x="325" y="150" width="150" height="350" fill="url(#gold-grad)" rx="15" stroke="#FFFFFF" stroke-width="4"/>
+                        <text x="400" y="220" font-size="70" font-weight="900" fill="#fff" text-anchor="middle" filter="url(#glow)">1</text>
+                        <text id="podium-name-1" x="400" y="100" font-size="34" font-weight="bold" fill="#fff" text-anchor="middle" text-shadow="2px 2px 5px #000">---</text>
+                        <text id="podium-score-1" x="400" y="130" font-size="24" font-weight="bold" fill="#FFD700" text-anchor="middle" text-shadow="1px 1px 3px #000">0đ</text>
+                        <!-- Vương miện -->
+                        <path d="M 360 50 L 380 75 L 400 40 L 420 75 L 440 50 L 430 85 L 370 85 Z" fill="#FFDF00" stroke="#FFFFFF" stroke-width="2" filter="url(#glow)"/>
+
+                        <!-- Bậc 3 (Đồng) -->
+                        <rect x="500" y="320" width="150" height="180" fill="url(#bronze-grad)" rx="15" stroke="#FFFFFF" stroke-width="4"/>
+                        <text x="575" y="380" font-size="40" font-weight="900" fill="#fff" text-anchor="middle" filter="url(#glow)">3</text>
+                        <text id="podium-name-3" x="575" y="290" font-size="26" font-weight="bold" fill="#fff" text-anchor="middle" text-shadow="2px 2px 5px #000">---</text>
+                        <text id="podium-score-3" x="575" y="315" font-size="18" font-weight="bold" fill="#FFD700" text-anchor="middle" text-shadow="1px 1px 3px #000">0đ</text>
+                    </svg>
+                </div>
+                
+                <!-- Bảng xếp hạng các top dưới -->
+                <div style="background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border-radius: 15px; border: 2px solid rgba(255,255,255,0.2); padding: 1rem; margin-top: 1rem; color: #fff;">
+                    <h3 style="margin: 0 0 10px 0;">Các dũng sĩ khác</h3>
+                    <ul id="podium-others" style="list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;"></ul>
+                </div>
+                
+                <button class="btn btn-primary" onclick="app.resetGame()" id="btn-restart-game" style="margin-top: 2rem; display: none;">Chơi Lại</button>
+            </div>
+        </div>
+        
+        <!-- WAITING FOR OTHERS SCREEN (Student finished early) -->
+        <div id="screen-waiting" class="screen">
+            <div class="waiting-scene">
+                <h2>Cổ vũ đồng đội! 👏</h2>
+                <p>Bạn đã hoàn thành tất cả câu hỏi. Hãy theo dõi trận đấu và chờ các bạn khác tiêu diệt Dusty nhé!</p>
+                <div class="mini-stats">
+                    <p>Máu Dusty còn: <span id="waiting-boss-hp"></span></p>
+                    <p>Điểm của bạn: <span id="waiting-my-score"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (v9 compat for simpler setup without bundlers) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    
+    <!-- Game Logic -->
+    <script src="script.js"></script>
+</body>
+</html>
