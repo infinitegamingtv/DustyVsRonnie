@@ -86,6 +86,14 @@ const audioManager = {
 };
 audioManager.init();
 
+// --- TỰ ĐỘNG NHẬN DIỆN TRÌNH DUYỆT (FIX VIEWPORT TRÊN MOBILE) ---
+function setVh() {
+    let vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+setVh();
+window.addEventListener('resize', setVh);
+
 /* ---------------------------------------------------------
  * STATE QUẢN LÝ GAME
  * --------------------------------------------------------- */
