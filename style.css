@@ -753,3 +753,81 @@ input[uppercase] { text-transform: uppercase; }
 @keyframes fall {
     to { transform: translateY(100vh) rotate(720deg); }
 }
+
+/* --- RESPONSIVE MOBILE LAYOUT --- */
+@media (max-width: 768px) {
+    .game-layout {
+        flex-direction: column;
+    }
+    
+    .col-left {
+        flex: none;
+        height: 40vh; /* Fixed height for game scene on mobile */
+        width: 100%;
+    }
+    
+    .col-right {
+        flex: 1;
+        width: 100%;
+        padding: 1rem;
+    }
+
+    /* Force the game stage to fit the 40vh area without rounding borders */
+    .col-left #game-scene .game-stage {
+        width: 100%;
+        height: 100%;
+        max-width: none;
+        aspect-ratio: auto;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    
+    /* Adjust typography */
+    h1 { font-size: 2.2rem; }
+    h2 { font-size: 1.5rem; }
+    p { font-size: 1rem; }
+    
+    .btn {
+        padding: 0.8rem 1.2rem;
+        min-width: 150px;
+        font-size: 1.1rem;
+    }
+
+    /* Resize characters to fit smaller vertical space */
+    .boss-container {
+        width: 70%;
+        top: 5%;
+    }
+    
+    .dusty-boss {
+        width: 25%;
+    }
+    
+    .ronnie-character {
+        width: 25%;
+        bottom: 2%;
+    }
+    
+    .question-text {
+        font-size: 1.2rem;
+        min-height: auto;
+        padding: 0.8rem;
+    }
+
+    .btn-option {
+        padding: 0.6rem 0.8rem;
+        font-size: 1rem;
+        min-height: 44px;
+    }
+    
+    /* Leaderboard inside game-stage needs scaling */
+    .leaderboard-panel {
+        transform: scale(0.7);
+        transform-origin: top left;
+        padding: 0.5rem;
+    }
+    
+    #question-image {
+        max-height: 150px !important;
+    }
+}
